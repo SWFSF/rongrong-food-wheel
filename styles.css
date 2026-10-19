@@ -488,6 +488,10 @@ button:disabled {
   content: "";
 }
 
+.wheel-area.is-spinning .wheel-halo {
+  animation: halo-thrill 680ms ease-in-out infinite alternate;
+}
+
 .wheel-svg {
   display: block;
   width: 100%;
@@ -502,6 +506,12 @@ button:disabled {
 
 .wheel-svg.is-spinning {
   pointer-events: none;
+}
+
+.wheel-svg.is-spinning .wheel-label,
+.wheel-svg.is-spinning .wheel-emoji {
+  opacity: 0.74;
+  filter: blur(0.8px);
 }
 
 .wheel-slice {
@@ -519,20 +529,18 @@ button:disabled {
   stroke: rgba(255, 253, 248, 0.52);
   stroke-width: 1.8px;
   stroke-linejoin: round;
-  transform: rotate(calc(0deg - var(--wheel-rotation, 0deg)));
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 3.35s cubic-bezier(0.12, 0.76, 0.08, 1);
+  transition: filter 160ms ease, opacity 160ms ease;
 }
 
 .wheel-emoji {
   font-size: 17px;
   paint-order: normal;
   stroke: none;
-  transform: rotate(calc(0deg - var(--wheel-rotation, 0deg)));
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 3.35s cubic-bezier(0.12, 0.76, 0.08, 1);
+  transition: filter 160ms ease, opacity 160ms ease;
 }
 
 .wheel-center-rim {
@@ -551,6 +559,10 @@ button:disabled {
   transform: translateX(-50%) rotate(180deg);
   pointer-events: none;
   filter: drop-shadow(0 4px 4px rgba(84, 48, 50, 0.2));
+}
+
+.wheel-area.is-spinning .wheel-pointer {
+  animation: pointer-tick 110ms steps(2, end) infinite alternate;
 }
 
 .wheel-pointer svg {
@@ -1653,6 +1665,30 @@ select.text-input {
   50% {
     opacity: 0.55;
     transform: translateY(-3px);
+  }
+}
+
+@keyframes halo-thrill {
+  from {
+    box-shadow:
+      0 17px 35px rgba(128, 79, 72, 0.14),
+      inset 0 0 0 1px rgba(205, 180, 175, 0.45);
+    transform: scale(0.995);
+  }
+  to {
+    box-shadow:
+      0 20px 44px rgba(197, 70, 91, 0.2),
+      inset 0 0 0 1px rgba(205, 180, 175, 0.6);
+    transform: scale(1.006);
+  }
+}
+
+@keyframes pointer-tick {
+  from {
+    transform: translateX(-50%) rotate(179deg);
+  }
+  to {
+    transform: translateX(-50%) rotate(181deg);
   }
 }
 

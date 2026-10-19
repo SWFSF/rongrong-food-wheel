@@ -1,4 +1,4 @@
-const CACHE_NAME = "rongrong-food-wheel-v2";
+const CACHE_NAME = "rongrong-food-wheel-v3";
 const APP_SHELL = [
   "./",
   "./index.html",

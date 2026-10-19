@@ -36,6 +36,7 @@ const elements = {
   phaseChips: [...document.querySelectorAll("[data-phase]")],
   periodTip: document.querySelector("#period-tip"),
   wheelSvg: document.querySelector("#wheel-svg"),
+  wheelArea: document.querySelector(".wheel-area"),
   wheelStatus: document.querySelector("#wheel-status"),
   spinButton: document.querySelector("#spin-button"),
   shuffleButton: document.querySelector("#shuffle-button"),
@@ -97,6 +98,7 @@ let currentWheel = [];
 let currentResult = null;
 let currentRotation = 0;
 let isSpinning = false;
+let labelsSettled = true;
 let onboardingSelection = new Set(state.preferences.dislikes);
 let toastTimer = 0;
 let lastShownDate = currentDateKey;
@@ -356,6 +358,9 @@ function updateWheel() {
   });
 
   renderWheel(currentWheel);
+  if (!isSpinning) {
+    settleWheelLabels(0);
+  }
   const dateLabel = formatDateLabel(currentDateKey);
   elements.wheelStatus.textContent = currentWheel.length
     ? `今天有 ${currentWheel.length} 道候选 · ${dateLabel}`
@@ -459,24 +464,118 @@ async function spinWheel() {
 
   const selectedIndex = secureRandomIndex(currentWheel.length);
   const selected = currentWheel[selectedIndex];
+  await alignWheelLabelsForSpin();
   const desired = (360 - selectedIndex * (360 / currentWheel.length)) % 360;
   const normalized = ((currentRotation % 360) + 360) % 360;
   const alignment = (desired - normalized + 360) % 360;
   const jitter = (Math.random() * 8) - 4;
-  currentRotation += 360 * 6 + alignment + jitter;
-  elements.wheelSvg.classList.add("is-spinning");
-  elements.wheelSvg.style.transform = `rotate(${currentRotation}deg)`;
-  elements.wheelSvg.style.setProperty("--wheel-rotation", `${currentRotation}deg`);
+  const startRotation = currentRotation;
+  const turns = reduceMotion ? 2 : 6;
+  const endRotation = startRotation + (360 * turns) + alignment + jitter;
+  const duration = reduceMotion ? 1300 : 4600;
+  currentRotation = endRotation;
 
-  await delay(reduceMotion ? 80 : 3450);
+  elements.wheelSvg.classList.add("is-spinning");
+  elements.wheelArea.classList.add("is-spinning");
+  elements.wheelStatus.textContent = "呼噜呼噜，转盘正在转起来";
+
+  const almostDone = endRotation - 220;
+  const animation = elements.wheelSvg.animate([
+    {
+      transform: `rotate(${startRotation}deg)`,
+      offset: 0,
+      easing: "cubic-bezier(0.42, 0, 0.88, 0.5)"
+    },
+    {
+      transform: `rotate(${startRotation + 98}deg)`,
+      offset: 0.075,
+      easing: "linear"
+    },
+    {
+      transform: `rotate(${almostDone}deg)`,
+      offset: 0.82,
+      easing: "cubic-bezier(0.12, 0.7, 0.18, 1)"
+    },
+    {
+      transform: `rotate(${endRotation + 12}deg)`,
+      offset: 0.94,
+      easing: "ease-in-out"
+    },
+    {
+      transform: `rotate(${endRotation - 5}deg)`,
+      offset: 0.978,
+      easing: "ease-out"
+    },
+    {
+      transform: `rotate(${endRotation}deg)`,
+      offset: 1
+    }
+  ], {
+    duration,
+    easing: "linear",
+    fill: "forwards"
+  });
+
+  try {
+    await animation.finished;
+  } catch {
+    // 动画被系统打断时，仍然以最终角度呈现结果。
+  }
+  animation.cancel();
+  elements.wheelSvg.style.transform = `rotate(${endRotation}deg)`;
   elements.wheelSvg.classList.remove("is-spinning");
+  elements.wheelArea.classList.remove("is-spinning");
+  settleWheelLabels(reduceMotion ? 0 : 420);
   elements.spinButton.disabled = false;
   elements.spinAgain.disabled = false;
   elements.shuffleButton.disabled = false;
   elements.spinButton.querySelector(".spin-main").textContent = "再转一次";
   elements.spinButton.querySelector(".spin-small").textContent = "换一个";
+  elements.wheelStatus.textContent = `今天有 ${currentWheel.length} 道候选 · ${formatDateLabel(currentDateKey)}`;
   isSpinning = false;
+  if (!reduceMotion) await delay(240);
   showResult(selected, true);
+}
+
+async function alignWheelLabelsForSpin() {
+  if (!labelsSettled) return;
+  const normalized = ((currentRotation % 360) + 360) % 360;
+  if (normalized === 0) {
+    labelsSettled = false;
+    return;
+  }
+  const labels = wheelLabelElements();
+  labels.forEach((label) => {
+    label.style.transition = reduceMotion
+      ? "none"
+      : "transform 180ms cubic-bezier(0.3, 0, 0.7, 1)";
+    label.style.transform = "rotate(0deg)";
+  });
+  labelsSettled = false;
+  if (!reduceMotion) await delay(155);
+}
+
+function settleWheelLabels(duration = 420) {
+  const normalized = ((currentRotation % 360) + 360) % 360;
+  const uprightAngle = normalized === 0 ? 0 : -normalized;
+  wheelLabelElements().forEach((label) => {
+    label.style.transition = duration
+      ? `transform ${duration}ms cubic-bezier(0.2, 0.78, 0.2, 1)`
+      : "none";
+    label.style.transform = `rotate(${uprightAngle}deg)`;
+    if (duration) {
+      window.setTimeout(() => {
+        label.style.transition = "";
+      }, duration + 30);
+    } else {
+      label.style.transition = "";
+    }
+  });
+  labelsSettled = true;
+}
+
+function wheelLabelElements() {
+  return [...elements.wheelSvg.querySelectorAll(".wheel-label, .wheel-emoji")];
 }
 
 function showResult(food, shouldScroll) {
