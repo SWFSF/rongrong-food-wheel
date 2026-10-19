@@ -1,0 +1,28 @@
+{
+  "name": "蓉蓉的今日饭饭",
+  "short_name": "蓉蓉饭饭",
+  "description": "给蓉蓉的中国矿业大学北京沙河校区美食大转盘。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#fff8ee",
+  "theme_color": "#fff8ee",
+  "categories": ["food", "lifestyle"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
